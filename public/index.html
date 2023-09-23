@@ -1,89 +1,94 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
-
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/10.4.0/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/10.4.0/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/10.4.0/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/10.4.0/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/10.4.0/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/10.4.0/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/10.4.0/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/10.4.0/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/10.4.0/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/10.4.0/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
-
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pubblibike2maps</title>
+    <script
+      async
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_h4M1artOPPisDDhpabx4OtwOckWh9M8&libraries=places&callback=initAutocomplete"
+    ></script>
   </head>
   <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+    <div>
+      <input id="query" type="text" placeholder="Search for places..."  style="width: 100%;"/>
+      <div id="results"></div>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
-
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+      cachedStations = null;
+      /**
+       * @return {Promise<{id: number,latitude: number,longitude: number,state: {id: number,name: string}}>} Promise object represents the stations
+       */
+      async function getStations() {
+        if (!cachedStations) {
+          cachedStations = await fetch(
+            "https://getstations-bp5bh5ciwq-uc.a.run.app/"
+          )
+            .then((response) => response.json())
+            .catch((error) => console.error(error));
         }
-      });
+        return cachedStations;
+      }
+      function dist(lat1, lon1, lat2, lon2) {
+        var R = 6371e3; // metres
+        var φ1 = (lat1 * Math.PI) / 180; // φ, λ in radians
+        var φ2 = (lat2 * Math.PI) / 180;
+        var Δφ = ((lat2 - lat1) * Math.PI) / 180;
+        var Δλ = ((lon2 - lon1) * Math.PI) / 180;
+        var a =
+          Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+          Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c; // in metres
+      }
+      async function onPlaceChanged(startPos) {
+        document.getElementById("results").innerHTML = "Loading...";
+        var place = autocomplete.getPlace();
+        var lat = place.geometry.location.lat();
+        var lng = place.geometry.location.lng();
+        getStations().then((r) => {
+          const nearest = r
+            .map((s) => ({
+              station: s,
+              distance: dist(lat, lng, s.latitude, s.longitude),
+            }))
+            .reduce((a, v) => (a.distance < v.distance ? a : v)).station;
+          const url = `https://www.google.com/maps/dir/${startPos.latitude},${startPos.longitude}/${nearest.latitude},${nearest.longitude}/${lat},${lng}`;
+          document.getElementById("results").innerHTML = `<a href="${url}">${url}</a>`;
+        }).catch((e) => {
+          document.getElementById("results").innerHTML = `ERROR: ${e}`;
+        })
+      }
+      function initAutocomplete() {
+        // get device location
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            autocomplete = new google.maps.places.Autocomplete(
+              document.getElementById("query"),
+              {
+                bounds: new google.maps.LatLngBounds(
+                  new google.maps.LatLng(
+                    position.coords.latitude - 0.1,
+                    position.coords.longitude - 0.1
+                  ),
+                  new google.maps.LatLng(
+                    position.coords.latitude + 0.1,
+                    position.coords.longitude + 0.1
+                  )
+                ),
+                strictBounds: false,
+                types: ["establishment"],
+                componentRestrictions: { country: ["ch"] },
+                fields: ["place_id", "geometry", "name"],
+              }
+            );
+            autocomplete.addListener("place_changed", () => {
+              onPlaceChanged(position.coords);
+            });
+          },
+          (e) => alert("ERROR:" + String(e))
+        );
+      }
     </script>
   </body>
 </html>
