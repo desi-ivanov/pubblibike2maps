@@ -2,19 +2,19 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <title>Pubblibike2maps</title>
-    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_h4M1artOPPisDDhpabx4OtwOckWh9M8&libraries=places&callback=initAutocomplete"
-    ></script>
+    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_h4M1artOPPisDDhpabx4OtwOckWh9M8&libraries=places&callback=initAutocomplete"></script>
   </head>
   <body>
-    <div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
       <div>Find direction to a place with a stop at the nearest pubblibike location</div>
       <div><input id="query" type="text" placeholder="Search place..." style="width: 90%" /></div>
       <div id="results"></div>
     </div>
     <script>
       let cachedStations = null;
+      let autocomplete = null;
       async function getStations() {
         if (!cachedStations) {
           cachedStations = await fetch("https://getstations-bp5bh5ciwq-uc.a.run.app/")
@@ -58,7 +58,7 @@
       function initAutocomplete() {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const autocomplete = new google.maps.places.Autocomplete(
+            autocomplete = new google.maps.places.Autocomplete(
               document.getElementById("query"),
               {
                 bounds: new google.maps.LatLngBounds(
