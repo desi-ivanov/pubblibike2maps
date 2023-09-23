@@ -15,7 +15,7 @@
         id="query"
         type="text"
         placeholder="Search for places..."
-        style="width: 100%"
+        style="width: 90%"
       />
       <div id="results"></div>
     </div>
@@ -59,7 +59,7 @@
                 distance: dist(lat, lng, s.latitude, s.longitude),
               }))
               .reduce((a, v) => (a.distance < v.distance ? a : v)).station;
-            const url = `https://www.google.com/maps/dir/${startPos.latitude},${startPos.longitude}/${nearest.latitude},${nearest.longitude}/${lat},${lng}`;
+            const url = `https://www.google.com/maps/dir/${startPos.latitude},${startPos.longitude}/${nearest.latitude},${nearest.longitude}/${lat},${lng}/data=!3m1!4b1!4m2!4m1!3e1?entry=ttu`;
             document.getElementById(
               "results"
             ).innerHTML = `<a href="${url}">${url}</a>`;
