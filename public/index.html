@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
@@ -15,6 +15,9 @@
     <script>
       let cachedStations = null;
       let autocomplete = null;
+      /**
+       * @return {Promise<{id: number,latitude: number,longitude: number,state: {id: number,name: string}}>} Promise object represents the stations
+       */
       async function getStations() {
         if (!cachedStations) {
           cachedStations = await fetch("https://getstations-bp5bh5ciwq-uc.a.run.app/")
@@ -23,32 +26,59 @@
         }
         return cachedStations;
       }
+      /**
+       * @param {number} lat1
+       * @param {number} lon1
+       * @param {number} lat2
+       * @param {number} lon2
+       */
       function dist(lat1, lon1, lat2, lon2) {
-        var R = 6371e3;
-        var φ1 = (lat1 * Math.PI) / 180;
-        var φ2 = (lat2 * Math.PI) / 180;
-        var Δφ = ((lat2 - lat1) * Math.PI) / 180;
-        var Δλ = ((lon2 - lon1) * Math.PI) / 180;
-        var a =
+        const R = 6371e3;
+        const φ1 = (lat1 * Math.PI) / 180;
+        const φ2 = (lat2 * Math.PI) / 180;
+        const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+        const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+        const a =
           Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
           Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
       }
+      /**
+       * @param {[number,number][]} latlons
+       */
+      function toMapsUrl(latlons) {
+        const p = latlons.map(([lat,lon]) => `${lat},${lon}`).join("/");
+        return `https://www.google.com/maps/dir/${p}/data=!3m1!4b1!4m2!4m1!3e1?entry=ttu`;
+      }
+      /**
+       * @param {{latitude: number, longitude: number}} startPos
+       */
       async function onPlaceChanged(startPos) {
         document.getElementById("results").innerHTML = "Loading...";
-        var place = autocomplete.getPlace();
-        var lat = place.geometry.location.lat();
-        var lng = place.geometry.location.lng();
+        const place = autocomplete.getPlace();
+        const endLatitude = place.geometry.location.lat();
+        const endLongitude = place.geometry.location.lng();
         getStations()
           .then((r) => {
-            const nearest = r
+            const nearestStationToStart = r
               .map((s) => ({
                 station: s,
-                distance: dist(lat, lng, s.latitude, s.longitude),
+                distance: dist(startPos.latitude, startPos.longitude, s.latitude, s.longitude),
               }))
               .reduce((a, v) => (a.distance < v.distance ? a : v)).station;
-            const url = `https://www.google.com/maps/dir/${startPos.latitude},${startPos.longitude}/${nearest.latitude},${nearest.longitude}/${lat},${lng}/data=!3m1!4b1!4m2!4m1!3e1?entry=ttu`;
+            const nearestStationToDest = r
+              .map((s) => ({
+                station: s,
+                distance: dist(endLatitude, endLongitude, s.latitude, s.longitude),
+              }))
+              .reduce((a, v) => (a.distance < v.distance ? a : v)).station;
+            const url = toMapsUrl([
+              [startPos.latitude, startPos.longitude],
+              [nearestStationToStart.latitude, nearestStationToStart.longitude],
+              [nearestStationToDest.latitude, nearestStationToDest.longitude],
+              [endLatitude, endLongitude],
+            ])
             document.getElementById("results").innerHTML = `<a href="${url}">${url}</a>`;
           })
           .catch((e) => {
